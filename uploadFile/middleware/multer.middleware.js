@@ -1,12 +1,28 @@
 import multer from "multer";
 import path from "path";
+import { fileURLToPath } from "url";
+import { dirname } from "path";
 
-const storage = multer.memoryStorage();
+// Fix __dirname for ES modules
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+
+// Storage path
+const storage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    cb(null, path.join(__dirname, "../uploads"));
+  },
+  filename: function (req, file, cb) {
+    const ext = path.extname(file.originalname);
+    const name = file.originalname.replace(ext, "").replace(/\s+/g, "-");
+    cb(null, `${name}-${Date.now()}${ext}`);
+  },
+});
+
 const allowedTypes = [".pdf", ".doc", ".docx"];
 
 const fileFilter = (req, file, cb) => {
-  const ext = path.extname(file.originalname).toLocaleLowerCase();
-  console.log(ext);
+  const ext = path.extname(file.originalname).toLowerCase();
   if (allowedTypes.includes(ext)) {
     cb(null, true);
   } else {
@@ -15,10 +31,11 @@ const fileFilter = (req, file, cb) => {
 };
 
 const upload = multer({
-  storage: storage,
-  fileFilter: fileFilter,
+  storage,
+  fileFilter,
   limits: {
-    fileSize: 5 * 1024 * 1024,
+    fileSize: 2 * 1024 * 1024, // 2 MB
   },
 });
+
 export default upload;
